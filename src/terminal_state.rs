@@ -45,3 +45,52 @@ impl TerminalState {
         self.history.push(format!("❌ {}", error));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_initial_state() {
+        let state = TerminalState::new();
+        assert!(state.current_input.is_empty());
+        assert_eq!(state.history.len(), 2);
+        assert_eq!(state.cursor_position, 0);
+    }
+
+    #[test]
+    fn test_add_char_ascii() {
+        let mut state = TerminalState::new();
+        state.add_char('a');
+        assert_eq!(state.current_input, "a");
+        assert_eq!(state.cursor_position, 1);
+    }
+
+    #[test]
+    fn test_add_char_utf8() {
+        let mut state = TerminalState::new();
+        state.add_char('á'); // 2-byte char
+        assert_eq!(state.current_input, "á");
+        assert_eq!(state.cursor_position, 2);
+    }
+
+    #[test]
+    fn test_backspace() {
+        let mut state = TerminalState::new();
+        state.add_char('a');
+        state.add_char('b');
+        state.backspace();
+        assert_eq!(state.current_input, "a");
+        assert_eq!(state.cursor_position, 1);
+    }
+
+    #[test]
+    fn test_history_trimming() {
+        let mut state = TerminalState::new();
+        for i in 0..1005 {
+            state.add_history_entry(format!("Command {}", i));
+        }
+        assert_eq!(state.history.len(), 1000);
+        assert_eq!(state.history.front().unwrap(), "Command 5");
+    }
+}
