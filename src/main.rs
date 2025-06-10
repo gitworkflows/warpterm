@@ -19,6 +19,61 @@ use command_executor::CommandExecutor;
 use ai_assistant::AIAssistant;
 use theme::Theme;
 
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use clap::{Arg, Command};
+//use warp_terminal::{
+//    app::WarpApp,
+//    config::Config,
+//    logger::Logger,
+//    error::WarpError,
+//};
+
+//#[tokio::main]
+//async fn main() -> Result<(), WarpError> {
+//    // Parse command line arguments
+//    let matches = Command::new("warp")
+//        .version("1.0.0")
+//        .author("Warp Terminal Team")
+//        .about("A modern, Rust-based terminal with AI built in")
+//        .arg(Arg::new("config")
+//            .short('c')
+//            .long("config")
+//            .value_name("FILE")
+//            .help("Sets a custom config file"))
+//        .arg(Arg::new("theme")
+//            .short('t')
+//            .long("theme")
+//            .value_name("THEME")
+//            .help("Sets the theme"))
+//        .arg(Arg::new("debug")
+//            .short('d')
+//            .long("debug")
+//            .help("Enable debug mode")
+//            .action(clap::ArgAction::SetTrue))
+//        .get_matches();
+//
+//    // Initialize logger
+//    let debug_mode = matches.get_flag("debug");
+//    Logger::init(debug_mode)?;
+//
+//    // Load configuration
+//    let config_path = matches.get_one::<String>("config");
+//    let config = Config::load(config_path).await?;
+//
+//    // Override theme if specified
+//    let mut final_config = config;
+//    if let Some(theme_name) = matches.get_one::<String>("theme") {
+//        final_config.ui.theme = theme_name.clone();
+//    }
+//
+//    // Create and run the application
+//    let app = WarpApp::new(Arc::new(Mutex::new(final_config))).await?;
+//    app.run().await?;
+//
+//    Ok(())
+//}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize terminal
     terminal::enable_raw_mode()?;

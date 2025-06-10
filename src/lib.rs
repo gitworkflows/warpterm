@@ -1,0 +1,20 @@
+pub mod app;
+pub mod config;
+pub mod error;
+pub mod logger;
+pub mod terminal;
+pub mod ui;
+pub mod ai;
+pub mod plugins;
+pub mod themes;
+pub mod pty;
+pub mod shell;
+pub mod history;
+pub mod completion;
+pub mod search;
+pub mod multiplexer;
+pub mod network;
+pub mod security;
+pub mod performance;
+
+pub use error::WarpError;
