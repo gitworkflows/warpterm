@@ -44,6 +44,12 @@ impl TerminalState {
     pub fn add_error(&mut self, error: String) {
         self.history.push(format!("❌ {}", error));
     }
+
+    pub fn process_command(&mut self, input: String) -> Result<(), WarpError> {
+        self.add_history_entry(input.clone());
+        let command = command_handler::Command::parse(&input);
+        command.execute(self)
+    }
 }
 
 #[cfg(test)]

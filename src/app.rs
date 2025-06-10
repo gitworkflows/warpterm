@@ -137,8 +137,8 @@ impl WarpApp {
         loop {
             tokio::select! {
                 // Handle terminal events
-                event = event::read() => {
-                    match event? {
+                Ok(event) = event::read() => {
+                    match event {
                         Event::Key(key_event) => {
                             if self.handle_key_event(key_event).await? {
                                 break;

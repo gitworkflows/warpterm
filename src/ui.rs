@@ -70,7 +70,7 @@ impl UI {
             // Header
             let header = Paragraph::new("🚀 Warp Terminal - Modern Rust Terminal with AI")
                 .block(Block::default().borders(Borders::ALL))
-                .style(Style::default().fg(Color::Cyan));
+                .style(Style::default().fg(to_ratatui_color(Color::Cyan)));
             f.render_widget(header, chunks[0]);
 
             // Main content (output)
@@ -81,20 +81,20 @@ impl UI {
             
             let output_list = List::new(output_items)
                 .block(Block::default().borders(Borders::ALL).title("Output"))
-                .style(Style::default().fg(Color::White));
+                .style(Style::default().fg(to_ratatui_color(Color::White)));
             f.render_widget(output_list, chunks[1]);
 
             // Input
             let input = Paragraph::new(self.input_buffer.as_ref())
                 .block(Block::default().borders(Borders::ALL).title("Input"))
-                .style(Style::default().fg(Color::Green));
+                .style(Style::default().fg(to_ratatui_color(Color::Green)));
             f.render_widget(input, chunks[2]);
 
             // AI Response (if any)
             if let Some(ref response) = self.ai_response {
                 let ai_widget = Paragraph::new(response.as_ref())
                     .block(Block::default().borders(Borders::ALL).title("🤖 AI Assistant"))
-                    .style(Style::default().fg(Color::Yellow));
+                    .style(Style::default().fg(to_ratatui_color(Color::Yellow)));
                 f.render_widget(ai_widget, chunks[3]);
             }
         })?;
@@ -173,5 +173,30 @@ impl UI {
     pub async fn resize(&mut self, width: u16, height: u16) -> Result<(), WarpError> {
         let _ = self.event_sender.send(UIEvent::Resize(width, height));
         Ok(())
+    }
+}
+
+// Convert crossterm colors to ratatui colors
+fn to_ratatui_color(color: crossterm::style::Color) -> ratatui::style::Color {
+    match color {
+        crossterm::style::Color::Reset => ratatui::style::Color::Reset,
+        crossterm::style::Color::Black => ratatui::style::Color::Black,
+        crossterm::style::Color::DarkGrey => ratatui::style::Color::DarkGray,
+        crossterm::style::Color::Red => ratatui::style::Color::Red,
+        crossterm::style::Color::DarkRed => ratatui::style::Color::Red,
+        crossterm::style::Color::Green => ratatui::style::Color::Green,
+        crossterm::style::Color::DarkGreen => ratatui::style::Color::Green,
+        crossterm::style::Color::Yellow => ratatui::style::Color::Yellow,
+        crossterm::style::Color::DarkYellow => ratatui::style::Color::Yellow,
+        crossterm::style::Color::Blue => ratatui::style::Color::Blue,
+        crossterm::style::Color::DarkBlue => ratatui::style::Color::Blue,
+        crossterm::style::Color::Magenta => ratatui::style::Color::Magenta,
+        crossterm::style::Color::DarkMagenta => ratatui::style::Color::Magenta,
+        crossterm::style::Color::Cyan => ratatui::style::Color::Cyan,
+        crossterm::style::Color::DarkCyan => ratatui::style::Color::Cyan,
+        crossterm::style::Color::White => ratatui::style::Color::White,
+        crossterm::style::Color::Grey => ratatui::style::Color::Gray,
+        crossterm::style::Color::Rgb { r, g, b } => ratatui::style::Color::Rgb(r, g, b),
+        crossterm::style::Color::AnsiValue(val) => ratatui::style::Color::Indexed(val),
     }
 }

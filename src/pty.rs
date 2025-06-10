@@ -1,8 +1,8 @@
-use std::process::{Command, Stdio};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::process::{Child, ChildStdin, ChildStdout};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::process::{Command, Child, ChildStdin, ChildStdout};
+use std::process::Stdio;
 
 use crate::error::WarpError;
 
@@ -12,11 +12,17 @@ pub struct PtyManager {
 }
 
 pub struct PtyProcess {
-    child: Child,
-    stdin: Option<ChildStdin>,
-    stdout: Option<ChildStdout>,
+    pub child: Child,
+    pub stdin: Option<ChildStdin>,
+    pub stdout: Option<ChildStdout>,
     pid: u32,
     command: String,
+}
+
+impl PtyProcess {
+    pub fn new(child: Child, stdin: Option<ChildStdin>, stdout: Option<ChildStdout>, pid: u32, command: String) -> Self {
+        Self { child, stdin, stdout, pid, command }
+    }
 }
 
 impl PtyManager {
@@ -38,13 +44,7 @@ impl PtyManager {
         let stdout = child.stdout.take();
         let pid = child.id().unwrap_or(0);
 
-        let process = PtyProcess {
-            child,
-            stdin,
-            stdout,
-            pid,
-            command: shell_command.to_string(),
-        };
+        let process = PtyProcess::new(child, stdin, stdout, pid, shell_command.to_string());
 
         let process_id = self.processes.len();
         self.processes.push(Arc::new(Mutex::new(process)));
@@ -72,11 +72,12 @@ impl PtyManager {
                 let mut process = process_arc.lock().await;
                 if let Some(ref mut stdout) = process.stdout {
                     let mut buffer = [0; 4096];
-                    match stdout.try_read(&mut buffer) {
+                    match stdout.read(&mut buffer).await {
                         Ok(n) if n > 0 => {
                             return Ok(String::from_utf8_lossy(&buffer[..n]).to_string());
                         }
-                        _ => {}
+                        Ok(_) => {}
+                        Err(e) => return Err(WarpError::PtyError(e.to_string())),
                     }
                 }
             }
@@ -102,4 +103,29 @@ impl PtyManager {
         }
         Ok(())
     }
+
+    pub async fn terminate(&mut self) -> Result<(), WarpError> {
+        if let Some(active_id) = self.active_process {
+            if let Some(process_arc) = self.processes.get(active_id) {
+                let mut process = process_arc.lock().await;
+                process.child.kill().await?;
+            }
+            self.processes.remove(active_id);
+            self.active_process = None;
+        }
+        Ok(())
+    }
+}
+
+async fn spawn_pty() -> Result<(Child, ChildStdin, ChildStdout), WarpError> {
+    let mut cmd = Command::new("bash");
+    cmd.stdin(Stdio::piped())
+       .stdout(Stdio::piped())
+       .stderr(Stdio::piped());
+
+    let mut child = cmd.spawn()?;
+    let stdin = child.stdin.take().ok_or(WarpError::PtyError("Failed to take stdin".to_string()))?;
+    let stdout = child.stdout.take().ok_or(WarpError::PtyError("Failed to take stdout".to_string()))?;
+
+    Ok((child, stdin, stdout))
 }

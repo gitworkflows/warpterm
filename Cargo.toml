@@ -13,7 +13,7 @@ categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 # Async runtime
-tokio = { version = "1.35", features = ["full"] }
+tokio = { version = "1.0", features = ["full"] }
 futures = "0.3"
 
 # Terminal handling
@@ -68,6 +68,12 @@ config = "0.13"
 # Error handling
 anyhow = "1.0"
 thiserror = "1.0"
+
+# Date and time
+chrono = "0.4"
+
+[build-dependencies]
+chrono = "0.4"
 
 [dev-dependencies]
 criterion = "0.5"

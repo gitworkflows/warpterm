@@ -14,6 +14,9 @@ pub enum WarpError {
     
     #[error("Command execution failed: {0}")]
     CommandExecution(String),
+    
+    #[error("PTY error: {0}")]
+    PtyError(String),
 }
 
 impl fmt::Display for WarpError {
@@ -23,6 +26,7 @@ impl fmt::Display for WarpError {
             WarpError::Utf8(e) => write!(f, "UTF-8 Error: {}", e),
             WarpError::Terminal(msg) => write!(f, "Terminal Error: {}", msg),
             WarpError::CommandExecution(msg) => write!(f, "Command Execution Error: {}", msg),
+            WarpError::PtyError(msg) => write!(f, "PTY Error: {}", msg),
         }
     }
 }
@@ -36,5 +40,9 @@ impl WarpError {
     
     pub fn command_err(msg: impl Into<String>) -> Self {
         WarpError::CommandExecution(msg.into())
+    }
+    
+    pub fn pty_err(msg: impl Into<String>) -> Self {
+        WarpError::PtyError(msg.into())
     }
 }

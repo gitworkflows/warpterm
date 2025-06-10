@@ -80,43 +80,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut stdout = io::stdout();
     execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
 
-    let mut terminal_state = TerminalState::new();
+    let mut state = TerminalState::new();
     let command_executor = CommandExecutor::new();
     let ai_assistant = AIAssistant::new();
     let theme = Theme::default();
 
-    // Main application loop
     loop {
-        // Clear screen and draw UI
-        queue!(
-            stdout,
-            terminal::Clear(ClearType::All),
-            cursor::MoveTo(0, 0)
-        )?;
-
-        // Draw header
-        draw_header(&mut stdout, &theme)?;
+        // Display current state
+        for line in &state.history {
+            println!("{}", line);
+        }
         
-        // Draw command prompt
-        draw_prompt(&mut stdout, &terminal_state, &theme)?;
+        // Display current input
+        print!("> {}", state.current_input);
+        io::stdout().flush()?;
         
-        // Draw command history
-        draw_history(&mut stdout, &terminal_state, &theme)?;
-
-        stdout.flush()?;
-
-        // Handle input
-        if let Event::Key(key_event) = event::read()? {
-            match handle_key_event(key_event, &mut terminal_state, &command_executor, &ai_assistant) {
-                Ok(should_exit) => {
-                    if should_exit {
-                        break;
-                    }
-                }
-                Err(e) => {
-                    terminal_state.add_error(format!("Error: {}", e));
-                }
-            }
+        // Read user input
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim().to_string();
+        
+        // Handle exit command
+        if input == "exit" {
+            break;
+        }
+        
+        // Process command
+        if let Err(e) = state.process_command(input) {
+            state.add_error(e.to_string());
         }
     }
 
