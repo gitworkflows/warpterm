@@ -137,17 +137,24 @@ impl WarpApp {
         loop {
             tokio::select! {
                 // Handle terminal events
-                Ok(event) = event::read() => {
+                event = event::read().await => {
                     match event {
-                        Event::Key(key_event) => {
-                            if self.handle_key_event(key_event).await? {
-                                break;
+                        Ok(evt) => {
+                            match evt {
+                                Event::Key(key_event) => {
+                                    if self.handle_key_event(key_event).await? {
+                                        break;
+                                    }
+                                }
+                                Event::Resize(width, height) => {
+                                    self.handle_resize(width, height).await?;
+                                }
+                                _ => {}
                             }
                         }
-                        Event::Resize(width, height) => {
-                            self.handle_resize(width, height).await?;
+                        Err(e) => {
+                            log::error!("Error reading event: {}", e);
                         }
-                        _ => {}
                     }
                 }
                 

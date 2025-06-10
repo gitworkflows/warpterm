@@ -101,3 +101,9 @@ ai = []
 plugins = []
 themes = []
 gpu-acceleration = []
+
+[workspace]
+members = [
+    "workflows/workflow-types",
+    "workflows/workflows",
+]
