@@ -1,5 +1,5 @@
-use log::LevelFilter;
 use env_logger::Builder;
+use log::LevelFilter;
 use std::io::Write;
 
 use crate::error::WarpError;

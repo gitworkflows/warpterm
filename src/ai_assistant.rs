@@ -11,17 +11,47 @@ impl AIAssistant {
         let mut suggestions = HashMap::new();
 
         // Pre-populate with common command explanations
-        command_explanations.insert("ls".to_string(), "Lists files and directories in the current directory".to_string());
-        command_explanations.insert("cd".to_string(), "Changes the current working directory".to_string());
-        command_explanations.insert("pwd".to_string(), "Prints the current working directory path".to_string());
-        command_explanations.insert("cat".to_string(), "Displays the contents of a file".to_string());
-        command_explanations.insert("grep".to_string(), "Searches for patterns in text files".to_string());
-        command_explanations.insert("find".to_string(), "Searches for files and directories".to_string());
+        command_explanations.insert(
+            "ls".to_string(),
+            "Lists files and directories in the current directory".to_string(),
+        );
+        command_explanations.insert(
+            "cd".to_string(),
+            "Changes the current working directory".to_string(),
+        );
+        command_explanations.insert(
+            "pwd".to_string(),
+            "Prints the current working directory path".to_string(),
+        );
+        command_explanations.insert(
+            "cat".to_string(),
+            "Displays the contents of a file".to_string(),
+        );
+        command_explanations.insert(
+            "grep".to_string(),
+            "Searches for patterns in text files".to_string(),
+        );
+        command_explanations.insert(
+            "find".to_string(),
+            "Searches for files and directories".to_string(),
+        );
 
         // Pre-populate with task suggestions
-        suggestions.insert("list files".to_string(), vec!["ls -la".to_string(), "find . -type f".to_string()]);
-        suggestions.insert("search text".to_string(), vec!["grep -r 'pattern' .".to_string(), "find . -name '*.txt' -exec grep 'pattern' {} +".to_string()]);
-        suggestions.insert("file permissions".to_string(), vec!["chmod 755 filename".to_string(), "ls -la".to_string()]);
+        suggestions.insert(
+            "list files".to_string(),
+            vec!["ls -la".to_string(), "find . -type f".to_string()],
+        );
+        suggestions.insert(
+            "search text".to_string(),
+            vec![
+                "grep -r 'pattern' .".to_string(),
+                "find . -name '*.txt' -exec grep 'pattern' {} +".to_string(),
+            ],
+        );
+        suggestions.insert(
+            "file permissions".to_string(),
+            vec!["chmod 755 filename".to_string(), "ls -la".to_string()],
+        );
 
         Self {
             command_explanations,
@@ -58,7 +88,10 @@ impl AIAssistant {
         for (key, commands) in &self.suggestions {
             if task.contains(key) {
                 let suggestions = commands.join("\n  • ");
-                return Ok(format!("💡 Suggestions for '{}':\n  • {}", task, suggestions));
+                return Ok(format!(
+                    "💡 Suggestions for '{}':\n  • {}",
+                    task, suggestions
+                ));
             }
         }
 
@@ -67,7 +100,7 @@ impl AIAssistant {
 
     fn debug_error(&self, error: &str) -> Result<String, Box<dyn std::error::Error>> {
         let error_lower = error.to_lowercase();
-        
+
         if error_lower.contains("permission denied") {
             Ok("🔧 Permission denied errors can be fixed by:\n  • Using 'sudo' for admin commands\n  • Checking file permissions with 'ls -la'\n  • Using 'chmod' to modify permissions".to_string())
         } else if error_lower.contains("command not found") {

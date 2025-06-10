@@ -1,26 +1,26 @@
-use std::sync::Arc;
-use tokio::sync::{Mutex, mpsc};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
 use std::io::{self, stdout};
+use std::sync::Arc;
+use tokio::sync::{mpsc, Mutex};
 
 use crate::{
-    config::Config,
-    terminal::Terminal,
-    ui::{UI, UIEvent},
     ai::AIAssistant,
+    ai::{AdvancedAI, CompletionContext, CompletionItem, ContextualSuggestion},
+    completion::CompletionEngine,
+    config::Config,
+    error::WarpError,
+    history::HistoryManager,
+    multiplexer::SessionMultiplexer,
     plugins::PluginManager,
     pty::PtyManager,
-    shell::ShellManager,
-    history::HistoryManager,
-    completion::CompletionEngine,
     search::SearchEngine,
-    multiplexer::SessionMultiplexer,
-    error::WarpError,
-    ai::{AdvancedAI, CompletionContext, CompletionItem, ContextualSuggestion},
+    shell::ShellManager,
+    terminal::Terminal,
+    ui::{UIEvent, UI},
 };
 
 pub struct WarpApp {
@@ -43,9 +43,11 @@ pub struct WarpApp {
 impl WarpApp {
     pub async fn new(config: Arc<Mutex<Config>>) -> Result<Self, WarpError> {
         let (event_sender, event_receiver) = mpsc::unbounded_channel();
-        
+
         let terminal = Arc::new(Mutex::new(Terminal::new().await?));
-        let ui = Arc::new(Mutex::new(UI::new(config.clone(), event_sender.clone()).await?));
+        let ui = Arc::new(Mutex::new(
+            UI::new(config.clone(), event_sender.clone()).await?,
+        ));
         let ai_assistant = Arc::new(AIAssistant::new(config.clone()).await?);
         let plugin_manager = Arc::new(PluginManager::new(config.clone()).await?);
         let pty_manager = Arc::new(Mutex::new(PtyManager::new().await?));
@@ -157,7 +159,7 @@ impl WarpApp {
                         }
                     }
                 }
-                
+
                 // Handle UI events
                 ui_event = async {
                     let mut receiver = self.event_receiver.lock().await;
@@ -241,7 +243,11 @@ impl WarpApp {
         Ok(())
     }
 
-    pub async fn get_completions(&self, input: &str, cursor_pos: usize) -> Result<Vec<CompletionItem>, WarpError> {
+    pub async fn get_completions(
+        &self,
+        input: &str,
+        cursor_pos: usize,
+    ) -> Result<Vec<CompletionItem>, WarpError> {
         let context = CompletionContext {
             current_line: input.to_string(),
             cursor_position: cursor_pos,
@@ -250,16 +256,19 @@ impl WarpApp {
                 .to_string_lossy()
                 .to_string(),
             shell_type: "zsh".to_string(), // This would be detected
-            command_history: vec![], // This would come from history manager
+            command_history: vec![],       // This would come from history manager
             environment_variables: std::env::vars().collect(),
-            git_status: None, // This would be detected
+            git_status: None,     // This would be detected
             docker_context: None, // This would be detected
         };
-        
+
         self.advanced_ai.get_completions(context).await
     }
 
-    pub async fn get_smart_suggestions(&self, input: &str) -> Result<Vec<ContextualSuggestion>, WarpError> {
+    pub async fn get_smart_suggestions(
+        &self,
+        input: &str,
+    ) -> Result<Vec<ContextualSuggestion>, WarpError> {
         let context = CompletionContext {
             current_line: input.to_string(),
             cursor_position: input.len(),
@@ -273,7 +282,7 @@ impl WarpApp {
             git_status: None,
             docker_context: None,
         };
-        
+
         self.advanced_ai.get_smart_suggestions(context).await
     }
 }

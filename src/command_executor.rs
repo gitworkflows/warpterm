@@ -1,5 +1,5 @@
-use std::process::{Command, Stdio};
 use std::env;
+use std::process::{Command, Stdio};
 
 pub struct CommandExecutor {
     current_dir: std::path::PathBuf,
@@ -14,7 +14,7 @@ impl CommandExecutor {
 
     pub fn execute(&self, input: &str) -> Result<String, Box<dyn std::error::Error>> {
         let trimmed = input.trim();
-        
+
         if trimmed.is_empty() {
             return Ok(String::new());
         }
@@ -55,7 +55,8 @@ AI Features:
   ai suggest <task>       - Get command suggestions for a task
   ai debug <error>        - Help debug command errors
 
-Press Ctrl+C to exit."#.to_string()
+Press Ctrl+C to exit."#
+            .to_string()
     }
 
     fn change_directory(&self, path: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -73,7 +74,10 @@ Press Ctrl+C to exit."#.to_string()
         }
     }
 
-    fn execute_external_command(&self, command: &str) -> Result<String, Box<dyn std::error::Error>> {
+    fn execute_external_command(
+        &self,
+        command: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
         let parts: Vec<&str> = command.split_whitespace().collect();
         if parts.is_empty() {
             return Ok(String::new());
@@ -88,7 +92,7 @@ Press Ctrl+C to exit."#.to_string()
             Ok(output) => {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                
+
                 if !stderr.is_empty() {
                     Ok(format!("{}\n❌ {}", stdout, stderr))
                 } else {

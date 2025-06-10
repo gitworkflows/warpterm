@@ -1,17 +1,14 @@
-use std::sync::Arc;
-use tokio::sync::{Mutex, mpsc};
-use crossterm::{
-    event::KeyEvent,
-    style::Color,
-};
+use crossterm::{event::KeyEvent, style::Color};
 use ratatui::{
     backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Modifier, Style},
+    text::{Span, Spans},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Terminal as RatatuiTerminal,
-    widgets::{Block, Borders, Paragraph, List, ListItem},
-    layout::{Layout, Constraint, Direction},
-    style::{Style, Modifier},
-    text::{Spans, Span},
 };
+use std::sync::Arc;
+use tokio::sync::{mpsc, Mutex};
 
 use crate::{config::Config, error::WarpError};
 
@@ -55,16 +52,19 @@ impl UI {
 
     pub async fn render(&mut self) -> Result<(), WarpError> {
         let config = self.config.lock().await;
-        
+
         self.terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Length(3),  // Header
-                    Constraint::Min(0),     // Main content
-                    Constraint::Length(3),  // Input
-                    Constraint::Length(5),  // AI response (if any)
-                ].as_ref())
+                .constraints(
+                    [
+                        Constraint::Length(3), // Header
+                        Constraint::Min(0),    // Main content
+                        Constraint::Length(3), // Input
+                        Constraint::Length(5), // AI response (if any)
+                    ]
+                    .as_ref(),
+                )
                 .split(f.size());
 
             // Header
@@ -74,11 +74,12 @@ impl UI {
             f.render_widget(header, chunks[0]);
 
             // Main content (output)
-            let output_items: Vec<ListItem> = self.output_buffer
+            let output_items: Vec<ListItem> = self
+                .output_buffer
                 .iter()
                 .map(|line| ListItem::new(line.as_ref()))
                 .collect();
-            
+
             let output_list = List::new(output_items)
                 .block(Block::default().borders(Borders::ALL).title("Output"))
                 .style(Style::default().fg(to_ratatui_color(Color::White)));
@@ -93,7 +94,11 @@ impl UI {
             // AI Response (if any)
             if let Some(ref response) = self.ai_response {
                 let ai_widget = Paragraph::new(response.as_ref())
-                    .block(Block::default().borders(Borders::ALL).title("🤖 AI Assistant"))
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("🤖 AI Assistant"),
+                    )
                     .style(Style::default().fg(to_ratatui_color(Color::Yellow)));
                 f.render_widget(ai_widget, chunks[3]);
             }
@@ -113,7 +118,7 @@ impl UI {
                 if !self.input_buffer.trim().is_empty() {
                     let command = self.input_buffer.clone();
                     self.output_buffer.push(format!("❯ {}", command));
-                    
+
                     // Check for AI commands
                     if command.starts_with("ai ") {
                         let query = command[3..].to_string();
@@ -121,12 +126,12 @@ impl UI {
                     } else {
                         let _ = self.event_sender.send(UIEvent::CommandExecuted(command));
                     }
-                    
+
                     self.input_buffer.clear();
                     self.cursor_position = 0;
                 }
             }
-            
+
             KeyEvent {
                 code: KeyCode::Backspace,
                 ..
@@ -136,7 +141,7 @@ impl UI {
                     self.input_buffer.remove(self.cursor_position);
                 }
             }
-            
+
             KeyEvent {
                 code: KeyCode::Char(c),
                 modifiers: KeyModifiers::NONE,
@@ -145,7 +150,7 @@ impl UI {
                 self.input_buffer.insert(self.cursor_position, c);
                 self.cursor_position += 1;
             }
-            
+
             _ => {}
         }
 
@@ -156,12 +161,12 @@ impl UI {
         for line in output.lines() {
             self.output_buffer.push(line.to_string());
         }
-        
+
         // Keep only last 1000 lines
         if self.output_buffer.len() > 1000 {
             self.output_buffer.drain(0..self.output_buffer.len() - 1000);
         }
-        
+
         Ok(())
     }
 

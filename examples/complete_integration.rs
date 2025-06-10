@@ -1,14 +1,14 @@
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use warp_terminal::{
     app::WarpApp,
     config::WarpConfig,
-    themes::ThemeManager,
-    keysets::KeySetManager,
-    workflows::WorkflowManager,
-    scripting::{ScriptingManager, ScriptLanguage},
     error::WarpError,
+    keysets::KeySetManager,
+    scripting::{ScriptLanguage, ScriptingManager},
+    themes::ThemeManager,
+    workflows::WorkflowManager,
 };
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() -> Result<(), WarpError> {
@@ -17,7 +17,7 @@ async fn main() -> Result<(), WarpError> {
 
     // Load configuration
     let config = Arc::new(Mutex::new(WarpConfig::load(None).await?));
-    
+
     // Initialize managers
     let theme_manager = Arc::new(Mutex::new(ThemeManager::new().await?));
     let keyset_manager = Arc::new(Mutex::new(KeySetManager::new().await?));
@@ -28,7 +28,10 @@ async fn main() -> Result<(), WarpError> {
     {
         let mut themes = theme_manager.lock().await;
         themes.set_current_theme("standard_light".to_string())?;
-        println!("Current theme: {:?}", themes.get_current_theme().map(|t| &t.name));
+        println!(
+            "Current theme: {:?}",
+            themes.get_current_theme().map(|t| &t.name)
+        );
     }
 
     // Example: List available keysets
@@ -50,7 +53,10 @@ async fn main() -> Result<(), WarpError> {
         end
     "#;
 
-    match scripting_manager.execute_script(ScriptLanguage::Lua, lua_script, None).await {
+    match scripting_manager
+        .execute_script(ScriptLanguage::Lua, lua_script, None)
+        .await
+    {
         Ok(result) => println!("Lua script result: {}", result),
         Err(e) => eprintln!("Lua script error: {}", e),
     }

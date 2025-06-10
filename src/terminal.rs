@@ -50,7 +50,13 @@ impl Terminal {
         Ok(())
     }
 
-    pub async fn write_at(&mut self, x: u16, y: u16, text: &str, color: Color) -> Result<(), WarpError> {
+    pub async fn write_at(
+        &mut self,
+        x: u16,
+        y: u16,
+        text: &str,
+        color: Color,
+    ) -> Result<(), WarpError> {
         let mut stdout = io::stdout();
         stdout.queue(cursor::MoveTo(x, y))?;
         stdout.queue(SetForegroundColor(color))?;

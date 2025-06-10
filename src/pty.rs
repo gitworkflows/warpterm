@@ -1,8 +1,8 @@
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::process::{Command, Child, ChildStdin, ChildStdout};
 use std::process::Stdio;
+use std::sync::Arc;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::process::{Child, ChildStdin, ChildStdout, Command};
+use tokio::sync::Mutex;
 
 use crate::error::WarpError;
 
@@ -20,8 +20,20 @@ pub struct PtyProcess {
 }
 
 impl PtyProcess {
-    pub fn new(child: Child, stdin: Option<ChildStdin>, stdout: Option<ChildStdout>, pid: u32, command: String) -> Self {
-        Self { child, stdin, stdout, pid, command }
+    pub fn new(
+        child: Child,
+        stdin: Option<ChildStdin>,
+        stdout: Option<ChildStdout>,
+        pid: u32,
+        command: String,
+    ) -> Self {
+        Self {
+            child,
+            stdin,
+            stdout,
+            pid,
+            command,
+        }
     }
 }
 
@@ -120,12 +132,18 @@ impl PtyManager {
 async fn spawn_pty() -> Result<(Child, ChildStdin, ChildStdout), WarpError> {
     let mut cmd = Command::new("bash");
     cmd.stdin(Stdio::piped())
-       .stdout(Stdio::piped())
-       .stderr(Stdio::piped());
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
     let mut child = cmd.spawn()?;
-    let stdin = child.stdin.take().ok_or(WarpError::PtyError("Failed to take stdin".to_string()))?;
-    let stdout = child.stdout.take().ok_or(WarpError::PtyError("Failed to take stdout".to_string()))?;
+    let stdin = child
+        .stdin
+        .take()
+        .ok_or(WarpError::PtyError("Failed to take stdin".to_string()))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or(WarpError::PtyError("Failed to take stdout".to_string()))?;
 
     Ok((child, stdin, stdout))
 }

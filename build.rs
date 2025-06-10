@@ -4,11 +4,14 @@ use std::path::Path;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    
+
     // Set build-time environment variables
-    println!("cargo:rustc-env=BUILD_TIME={}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"));
+    println!(
+        "cargo:rustc-env=BUILD_TIME={}",
+        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+    );
     println!("cargo:rustc-env=GIT_HASH={}", get_git_hash());
-    
+
     // Platform-specific configurations
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     match target_os.as_str() {
@@ -25,7 +28,7 @@ fn main() {
         }
         _ => {}
     }
-    
+
     // Generate version info
     generate_version_info();
 }
@@ -43,7 +46,7 @@ fn get_git_hash() -> String {
 fn generate_version_info() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("version.rs");
-    
+
     let version_info = format!(
         r#"
 pub const VERSION: &str = "{}";
@@ -56,6 +59,6 @@ pub const TARGET: &str = "{}";
         get_git_hash(),
         env::var("TARGET").unwrap_or_else(|_| "unknown".to_string())
     );
-    
+
     fs::write(&dest_path, version_info).unwrap();
 }

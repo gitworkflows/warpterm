@@ -1,13 +1,19 @@
-use warp_terminal::{
-    dev_tools::{DevToolsManager, TestSuite, TestCase, TestType, TestExpectation},
-    ab_testing::{ABTestingFramework, Experiment, Variant, VariantConfiguration, AllocationStrategy, TargetMetric, MetricType, MetricGoal, ExperimentStatus},
-    ml_insights::{MLInsightsEngine, PredictionType},
-    export::{ExportManager, ExportRequest, ExportFormat, DataSource, ExportDestination},
-    custom_metrics::{CustomMetricsManager, MetricDefinition, MetricType as CustomMetricType, CollectionMethod, MetricDataPoint, MetricValue},
-    error::WarpError,
-};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use warp_terminal::{
+    ab_testing::{
+        ABTestingFramework, AllocationStrategy, Experiment, ExperimentStatus, MetricGoal,
+        MetricType, TargetMetric, Variant, VariantConfiguration,
+    },
+    custom_metrics::{
+        CollectionMethod, CustomMetricsManager, MetricDataPoint, MetricDefinition,
+        MetricType as CustomMetricType, MetricValue,
+    },
+    dev_tools::{DevToolsManager, TestCase, TestExpectation, TestSuite, TestType},
+    error::WarpError,
+    export::{DataSource, ExportDestination, ExportFormat, ExportManager, ExportRequest},
+    ml_insights::{MLInsightsEngine, PredictionType},
+};
 
 #[tokio::main]
 async fn main() -> Result<(), WarpError> {
@@ -24,7 +30,7 @@ async fn main() -> Result<(), WarpError> {
     // Demo 1: Development Tools
     println!("\n📋 Demo 1: Development Tools");
     println!("----------------------------");
-    
+
     // Create a test suite
     let test_suite = TestSuite {
         name: "Theme Validation Tests".to_string(),
@@ -33,7 +39,8 @@ async fn main() -> Result<(), WarpError> {
                 name: "Color Contrast Test".to_string(),
                 description: "Verify theme colors meet accessibility standards".to_string(),
                 test_type: TestType::Unit,
-                code: "assert_contrast_ratio(theme.foreground, theme.background) >= 4.5".to_string(),
+                code: "assert_contrast_ratio(theme.foreground, theme.background) >= 4.5"
+                    .to_string(),
                 expected_result: TestExpectation::Success,
                 timeout: 5000,
                 tags: vec!["accessibility".to_string(), "theme".to_string()],
@@ -43,7 +50,10 @@ async fn main() -> Result<(), WarpError> {
                 description: "Ensure theme loads within acceptable time".to_string(),
                 test_type: TestType::Performance,
                 code: "measure_theme_load_time()".to_string(),
-                expected_result: TestExpectation::Performance { max_time_ms: 100, max_memory_mb: 10 },
+                expected_result: TestExpectation::Performance {
+                    max_time_ms: 100,
+                    max_memory_mb: 10,
+                },
                 timeout: 10000,
                 tags: vec!["performance".to_string()],
             },
@@ -58,7 +68,12 @@ async fn main() -> Result<(), WarpError> {
     let test_results = dev_tools.run_tests("catppuccin-theme", &test_suite).await?;
     println!("✅ Test Results:");
     for result in &test_results {
-        println!("  - {}: {:?} ({}ms)", result.test_name, result.status, result.duration.as_millis());
+        println!(
+            "  - {}: {:?} ({}ms)",
+            result.test_name,
+            result.status,
+            result.duration.as_millis()
+        );
     }
 
     // Start debugging session
@@ -66,7 +81,14 @@ async fn main() -> Result<(), WarpError> {
     println!("🐛 Debug session started: {}", debug_session);
 
     // Set breakpoint
-    let breakpoint_id = dev_tools.set_breakpoint(&debug_session, "theme.rs", 42, Some("color_count > 16".to_string())).await?;
+    let breakpoint_id = dev_tools
+        .set_breakpoint(
+            &debug_session,
+            "theme.rs",
+            42,
+            Some("color_count > 16".to_string()),
+        )
+        .await?;
     println!("🔴 Breakpoint set: {}", breakpoint_id);
 
     // Start profiling
@@ -91,18 +113,25 @@ async fn main() -> Result<(), WarpError> {
                 allocation_percentage: 50.0,
                 configuration: VariantConfiguration::Algorithm {
                     algorithm_id: "popularity_recommender".to_string(),
-                    parameters: HashMap::from([("weight_downloads".to_string(), 0.7), ("weight_ratings".to_string(), 0.3)]),
+                    parameters: HashMap::from([
+                        ("weight_downloads".to_string(), 0.7),
+                        ("weight_ratings".to_string(), 0.3),
+                    ]),
                 },
                 is_control: true,
             },
             Variant {
                 id: "treatment".to_string(),
                 name: "ML-based Recommendations".to_string(),
-                description: "New machine learning algorithm using user behavior patterns".to_string(),
+                description: "New machine learning algorithm using user behavior patterns"
+                    .to_string(),
                 allocation_percentage: 50.0,
                 configuration: VariantConfiguration::Algorithm {
                     algorithm_id: "ml_recommender".to_string(),
-                    parameters: HashMap::from([("model_version".to_string(), 2.1), ("confidence_threshold".to_string(), 0.8)]),
+                    parameters: HashMap::from([
+                        ("model_version".to_string(), 2.1),
+                        ("confidence_threshold".to_string(), 0.8),
+                    ]),
                 },
                 is_control: false,
             },
@@ -141,18 +170,28 @@ async fn main() -> Result<(), WarpError> {
 
     // Allocate users to variants
     let user_properties = HashMap::from([
-        ("user_type".to_string(), serde_json::Value::String("premium".to_string())),
-        ("region".to_string(), serde_json::Value::String("US".to_string())),
+        (
+            "user_type".to_string(),
+            serde_json::Value::String("premium".to_string()),
+        ),
+        (
+            "region".to_string(),
+            serde_json::Value::String("US".to_string()),
+        ),
     ]);
 
     for i in 0..10 {
         let user_id = format!("user_{}", i);
-        let variant = ab_testing.allocate_user(&user_id, &experiment_id, user_properties.clone()).await?;
+        let variant = ab_testing
+            .allocate_user(&user_id, &experiment_id, user_properties.clone())
+            .await?;
         println!("👤 User {} allocated to variant: {}", user_id, variant);
 
         // Track conversion
         if i % 3 == 0 {
-            ab_testing.track_conversion(&user_id, &experiment_id, "theme_install_rate", 1.0).await?;
+            ab_testing
+                .track_conversion(&user_id, &experiment_id, "theme_install_rate", 1.0)
+                .await?;
             println!("📈 Conversion tracked for user {}", user_id);
         }
     }
@@ -168,33 +207,56 @@ async fn main() -> Result<(), WarpError> {
         PredictionType::FeatureAdoption,
     ];
 
-    let user_prediction = ml_insights.predict_user_behavior("user_123", prediction_types).await?;
+    let user_prediction = ml_insights
+        .predict_user_behavior("user_123", prediction_types)
+        .await?;
     println!("🔮 User Behavior Predictions:");
     for (prediction_type, result) in &user_prediction.predictions {
-        println!("  - {}: {:.2} (confidence: {:.2})", prediction_type, result.value, result.confidence);
+        println!(
+            "  - {}: {:.2} (confidence: {:.2})",
+            prediction_type, result.value, result.confidence
+        );
     }
 
     // Generate personalized recommendations
     let context = HashMap::from([
-        ("current_theme".to_string(), serde_json::Value::String("dark".to_string())),
-        ("usage_pattern".to_string(), serde_json::Value::String("developer".to_string())),
+        (
+            "current_theme".to_string(),
+            serde_json::Value::String("dark".to_string()),
+        ),
+        (
+            "usage_pattern".to_string(),
+            serde_json::Value::String("developer".to_string()),
+        ),
     ]);
 
-    let recommendations = ml_insights.generate_personalized_recommendations("user_123", context).await?;
+    let recommendations = ml_insights
+        .generate_personalized_recommendations("user_123", context)
+        .await?;
     println!("💡 Personalized Recommendations:");
     for rec in &recommendations.recommendations {
-        println!("  - {} (score: {:.2}): {:?}", rec.item_id, rec.score, rec.reasoning);
+        println!(
+            "  - {} (score: {:.2}): {:?}",
+            rec.item_id, rec.score, rec.reasoning
+        );
     }
 
     // Detect anomalies
-    let anomalies = ml_insights.detect_anomalies(chrono::Duration::hours(24)).await?;
+    let anomalies = ml_insights
+        .detect_anomalies(chrono::Duration::hours(24))
+        .await?;
     println!("⚠️  Anomalies Detected:");
     for anomaly in &anomalies.anomalies {
-        println!("  - {:?}: {} (severity: {:?})", anomaly.anomaly_type, anomaly.description, anomaly.severity);
+        println!(
+            "  - {:?}: {} (severity: {:?})",
+            anomaly.anomaly_type, anomaly.description, anomaly.severity
+        );
     }
 
     // Analyze trends
-    let trend_analysis = ml_insights.analyze_trends("daily_active_users", chrono::Duration::days(30)).await?;
+    let trend_analysis = ml_insights
+        .analyze_trends("daily_active_users", chrono::Duration::days(30))
+        .await?;
     println!("📊 Trend Analysis for Daily Active Users:");
     println!("  - Direction: {:?}", trend_analysis.trend_direction);
     println!("  - Strength: {:.2}", trend_analysis.trend_strength);
@@ -210,14 +272,21 @@ async fn main() -> Result<(), WarpError> {
         format: ExportFormat::CSV,
         data_source: DataSource::Analytics,
         filters: vec![],
-        columns: Some(vec!["date".to_string(), "users".to_string(), "sessions".to_string(), "revenue".to_string()]),
+        columns: Some(vec![
+            "date".to_string(),
+            "users".to_string(),
+            "sessions".to_string(),
+            "revenue".to_string(),
+        ]),
         time_range: Some(crate::export::TimeRange {
             start: chrono::Utc::now() - chrono::Duration::days(30),
             end: chrono::Utc::now(),
             timezone: Some("UTC".to_string()),
         }),
         template: None,
-        destination: ExportDestination::LocalFile { path: PathBuf::from("/tmp/analytics_export.csv") },
+        destination: ExportDestination::LocalFile {
+            path: PathBuf::from("/tmp/analytics_export.csv"),
+        },
         compression: Some(crate::export::CompressionType::Gzip),
         encryption: None,
         metadata: HashMap::new(),
@@ -238,7 +307,9 @@ async fn main() -> Result<(), WarpError> {
         columns: None,
         time_range: None,
         template: None,
-        destination: ExportDestination::LocalFile { path: PathBuf::from("/tmp/ab_test_results.xlsx") },
+        destination: ExportDestination::LocalFile {
+            path: PathBuf::from("/tmp/ab_test_results.xlsx"),
+        },
         compression: None,
         encryption: None,
         metadata: HashMap::new(),
@@ -260,7 +331,9 @@ async fn main() -> Result<(), WarpError> {
             timezone: Some("UTC".to_string()),
         }),
         template: None,
-        destination: ExportDestination::LocalFile { path: PathBuf::from("/tmp/user_behavior.json") },
+        destination: ExportDestination::LocalFile {
+            path: PathBuf::from("/tmp/user_behavior.json"),
+        },
         compression: None,
         encryption: None,
         metadata: HashMap::new(),
@@ -281,14 +354,12 @@ async fn main() -> Result<(), WarpError> {
         metric_type: CustomMetricType::Counter,
         data_type: crate::custom_metrics::MetricDataType::Integer,
         collection_method: CollectionMethod::Event,
-        aggregation_rules: vec![
-            crate::custom_metrics::AggregationRule {
-                aggregation_type: crate::custom_metrics::AggregationType::Sum,
-                time_window: chrono::Duration::hours(1),
-                group_by: vec!["user_id".to_string()],
-                filter: None,
-            },
-        ],
+        aggregation_rules: vec![crate::custom_metrics::AggregationRule {
+            aggregation_type: crate::custom_metrics::AggregationType::Sum,
+            time_window: chrono::Duration::hours(1),
+            group_by: vec!["user_id".to_string()],
+            filter: None,
+        }],
         validation_rules: vec![],
         retention_policy: crate::custom_metrics::RetentionPolicy {
             raw_data_retention: chrono::Duration::days(30),
@@ -320,25 +391,21 @@ async fn main() -> Result<(), WarpError> {
                 default_value: Some("unknown".to_string()),
             },
         ],
-        alerts: vec![
-            crate::custom_metrics::MetricAlert {
-                alert_id: "high_switch_rate".to_string(),
-                name: "High Theme Switch Rate".to_string(),
-                condition: crate::custom_metrics::AlertCondition::GreaterThan,
-                threshold: crate::custom_metrics::AlertThreshold {
-                    value: 10.0,
-                    duration: chrono::Duration::minutes(5),
-                    severity: crate::custom_metrics::AlertSeverity::Warning,
-                },
-                notification_channels: vec![
-                    crate::custom_metrics::NotificationChannel::Email {
-                        recipients: vec!["admin@warp.dev".to_string()],
-                    },
-                ],
-                cooldown_period: chrono::Duration::minutes(15),
-                enabled: true,
+        alerts: vec![crate::custom_metrics::MetricAlert {
+            alert_id: "high_switch_rate".to_string(),
+            name: "High Theme Switch Rate".to_string(),
+            condition: crate::custom_metrics::AlertCondition::GreaterThan,
+            threshold: crate::custom_metrics::AlertThreshold {
+                value: 10.0,
+                duration: chrono::Duration::minutes(5),
+                severity: crate::custom_metrics::AlertSeverity::Warning,
             },
-        ],
+            notification_channels: vec![crate::custom_metrics::NotificationChannel::Email {
+                recipients: vec!["admin@warp.dev".to_string()],
+            }],
+            cooldown_period: chrono::Duration::minutes(15),
+            enabled: true,
+        }],
         created_by: "system".to_string(),
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -386,7 +453,10 @@ async fn main() -> Result<(), WarpError> {
     let query_result = custom_metrics.query_metric(query).await?;
     println!("🔍 Query results:");
     println!("  - Total data points: {}", query_result.total_count);
-    println!("  - Query duration: {}ms", query_result.query_duration.as_millis());
+    println!(
+        "  - Query duration: {}ms",
+        query_result.query_duration.as_millis()
+    );
 
     // Get metric status
     let metric_status = custom_metrics.get_metric_status(&metric_id).await?;
@@ -416,18 +486,25 @@ async fn main() -> Result<(), WarpError> {
                 filter: None,
             },
         ],
-        validation_rules: vec![
-            crate::custom_metrics::ValidationRule {
-                rule_type: crate::custom_metrics::ValidationRuleType::Range { min: 0.0, max: 10000.0 },
-                parameters: HashMap::new(),
-                error_action: crate::custom_metrics::ValidationErrorAction::Log,
+        validation_rules: vec![crate::custom_metrics::ValidationRule {
+            rule_type: crate::custom_metrics::ValidationRuleType::Range {
+                min: 0.0,
+                max: 10000.0,
             },
-        ],
+            parameters: HashMap::new(),
+            error_action: crate::custom_metrics::ValidationErrorAction::Log,
+        }],
         retention_policy: crate::custom_metrics::RetentionPolicy {
             raw_data_retention: chrono::Duration::days(7),
             aggregated_data_retention: HashMap::from([
-                (crate::custom_metrics::AggregationType::Average, chrono::Duration::days(90)),
-                (crate::custom_metrics::AggregationType::Percentile(95.0), chrono::Duration::days(90)),
+                (
+                    crate::custom_metrics::AggregationType::Average,
+                    chrono::Duration::days(90),
+                ),
+                (
+                    crate::custom_metrics::AggregationType::Percentile(95.0),
+                    chrono::Duration::days(90),
+                ),
             ]),
             compression_enabled: true,
             archival_storage: Some(crate::custom_metrics::ArchivalConfig {
@@ -454,26 +531,22 @@ async fn main() -> Result<(), WarpError> {
                 default_value: Some("unknown".to_string()),
             },
         ],
-        alerts: vec![
-            crate::custom_metrics::MetricAlert {
-                alert_id: "slow_plugin_load".to_string(),
-                name: "Slow Plugin Load Time".to_string(),
-                condition: crate::custom_metrics::AlertCondition::GreaterThan,
-                threshold: crate::custom_metrics::AlertThreshold {
-                    value: 1000.0, // 1 second
-                    duration: chrono::Duration::minutes(2),
-                    severity: crate::custom_metrics::AlertSeverity::Critical,
-                },
-                notification_channels: vec![
-                    crate::custom_metrics::NotificationChannel::Slack {
-                        webhook_url: "https://hooks.slack.com/services/...".to_string(),
-                        channel: "#performance-alerts".to_string(),
-                    },
-                ],
-                cooldown_period: chrono::Duration::minutes(10),
-                enabled: true,
+        alerts: vec![crate::custom_metrics::MetricAlert {
+            alert_id: "slow_plugin_load".to_string(),
+            name: "Slow Plugin Load Time".to_string(),
+            condition: crate::custom_metrics::AlertCondition::GreaterThan,
+            threshold: crate::custom_metrics::AlertThreshold {
+                value: 1000.0, // 1 second
+                duration: chrono::Duration::minutes(2),
+                severity: crate::custom_metrics::AlertSeverity::Critical,
             },
-        ],
+            notification_channels: vec![crate::custom_metrics::NotificationChannel::Slack {
+                webhook_url: "https://hooks.slack.com/services/...".to_string(),
+                channel: "#performance-alerts".to_string(),
+            }],
+            cooldown_period: chrono::Duration::minutes(10),
+            enabled: true,
+        }],
         created_by: "performance_team".to_string(),
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -487,7 +560,7 @@ async fn main() -> Result<(), WarpError> {
     let plugin_ids = ["git-enhanced", "docker-helper", "ai-assistant"];
     for (i, plugin_id) in plugin_ids.iter().enumerate() {
         let load_time = 200.0 + (i as f64 * 150.0); // Simulate different load times
-        
+
         let data_point = MetricDataPoint {
             metric_id: perf_metric_id.clone(),
             value: MetricValue::Float(load_time),
@@ -501,7 +574,10 @@ async fn main() -> Result<(), WarpError> {
         };
 
         custom_metrics.record_metric(data_point).await?;
-        println!("⏱️  Recorded load time for {}: {:.1}ms", plugin_id, load_time);
+        println!(
+            "⏱️  Recorded load time for {}: {:.1}ms",
+            plugin_id, load_time
+        );
     }
 
     // Start collection for all metrics
@@ -515,26 +591,35 @@ async fn main() -> Result<(), WarpError> {
     println!("  - Test suite executed with {} tests", test_results.len());
     println!("  - Debug session active: {}", debug_session);
     println!("  - Profiling session: {}", profile_id);
-    
+
     println!("✅ A/B Testing:");
     println!("  - Experiment created and running: {}", experiment_id);
     println!("  - 10 users allocated to variants");
     println!("  - Conversion tracking active");
-    
+
     println!("✅ Machine Learning Insights:");
     println!("  - User behavior predictions generated");
-    println!("  - Personalized recommendations: {} items", recommendations.recommendations.len());
-    println!("  - Anomaly detection: {} anomalies found", anomalies.anomalies.len());
+    println!(
+        "  - Personalized recommendations: {} items",
+        recommendations.recommendations.len()
+    );
+    println!(
+        "  - Anomaly detection: {} anomalies found",
+        anomalies.anomalies.len()
+    );
     println!("  - Trend analysis completed");
-    
+
     println!("✅ Export Capabilities:");
     println!("  - CSV export: {:?}", csv_result.status);
     println!("  - Excel export: {:?}", excel_result.status);
     println!("  - JSON export: {:?}", json_result.status);
-    
+
     println!("✅ Custom Metrics:");
     println!("  - Theme switch metric: {} data points", 5);
-    println!("  - Performance metric: {} plugins monitored", plugin_ids.len());
+    println!(
+        "  - Performance metric: {} plugins monitored",
+        plugin_ids.len()
+    );
     println!("  - Real-time collection active");
 
     println!("\n🚀 All systems operational! The Warp terminal now has:");
